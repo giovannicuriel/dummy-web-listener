@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate rustful;
 use std::error::Error;
-
+use std::sync::Mutex;
 use rustful::{Server, Context, Response, TreeRouter, Handler};
 
 fn print_packet(context: Context, response: Response) {
@@ -29,31 +29,45 @@ fn print_packet(context: Context, response: Response) {
     response.send("ok");
 }
 
-// Simple structure to handle requests
-// This is useful when adding endoint handlers,
-// so we can set different functions to each endpoint.
-struct HandlerRequest(fn(Context, Response));
-impl Handler for HandlerRequest {
+struct RequestHandler {
+    mutex: Mutex<u32>,
+    callback: fn(Context, Response),
+}
+
+impl RequestHandler {
+    fn new(cbk: fn(Context, Response)) -> RequestHandler {
+        RequestHandler { 
+            mutex: Mutex::new(0),
+            callback: cbk 
+        }
+    }
+}
+
+impl Handler for RequestHandler {
     fn handle_request(&self, context: Context, response: Response) {
-        self.0(context, response);
+        let _g = self.mutex.lock().unwrap();
+        (self.callback)(context, response);
     }
 }
 
 fn main() {
     let server_result = Server {
-        host: 8080.into(),
-        handlers: insert_routes!{
+            host: 8080.into(),
+            handlers: insert_routes!{
             TreeRouter::new() => {
-                "/" => Get: HandlerRequest(print_packet),
+                "/" => Get: RequestHandler
+            ::new(print_packet),
                 // Just an example.
-                "/:endpoint/:id" => Get: HandlerRequest(print_packet)
+                "/:endpoint/:id" => Get: RequestHandler
+            ::new(print_packet)
             } 
         },
-        .. Server::default()
-    }.run();
+            ..Server::default()
+        }
+        .run();
 
     match server_result {
-        Ok(_server) => {},
-        Err(e) => println!("could not start server: {}", e.description())
+        Ok(_server) => {}
+        Err(e) => println!("could not start server: {}", e.description()),
     }
 }
