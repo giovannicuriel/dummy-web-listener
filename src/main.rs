@@ -3,6 +3,7 @@ extern crate rustful;
 use std::error::Error;
 use std::sync::Mutex;
 use rustful::{Server, Context, Response, TreeRouter, Handler};
+use std::io::{BufReader, BufRead};
 
 fn print_packet(context: Context, response: Response) {
     // Print headers
@@ -26,6 +27,12 @@ fn print_packet(context: Context, response: Response) {
         println!(">> {}", value.as_utf8().unwrap());
     }
 
+    println!("Content: ");
+    let mut lines = BufReader::new(context.body).lines().enumerate();
+    while let Some((lineno, Ok(line))) = lines.next() {
+        format!("{}: {}", lineno + 1, line);
+    }
+    
     response.send("ok");
 }
 
@@ -52,14 +59,13 @@ impl Handler for RequestHandler {
 
 fn main() {
     let server_result = Server {
-            host: 8080.into(),
+            host: 8081.into(),
             handlers: insert_routes!{
             TreeRouter::new() => {
-                "/" => Get: RequestHandler
-            ::new(print_packet),
+                "/" => Get: RequestHandler::new(print_packet),
                 // Just an example.
-                "/:endpoint/:id" => Get: RequestHandler
-            ::new(print_packet)
+                "/:endpoint/:id" => Get: RequestHandler::new(print_packet),
+                "/:endpoint/:id" => Post: RequestHandler::new(print_packet)
             } 
         },
             ..Server::default()
