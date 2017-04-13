@@ -30,9 +30,9 @@ fn print_packet(context: Context, response: Response) {
     println!("Content: ");
     let mut lines = BufReader::new(context.body).lines().enumerate();
     while let Some((lineno, Ok(line))) = lines.next() {
-        format!("{}: {}", lineno + 1, line);
+        println!("{}: {}", lineno + 1, line);
     }
-    
+        
     response.send("ok");
 }
 
