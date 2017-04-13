@@ -6,6 +6,7 @@ use rustful::{Server, Context, Response, TreeRouter, Handler};
 use std::io::{BufReader, BufRead};
 
 fn print_packet(context: Context, response: Response) {
+    println!("Method: {}", context.method);
     // Print headers
     println!("Headers: ");
     for value in context.headers.iter() {
@@ -32,7 +33,6 @@ fn print_packet(context: Context, response: Response) {
     while let Some((lineno, Ok(line))) = lines.next() {
         println!("{}: {}", lineno + 1, line);
     }
-        
     response.send("ok");
 }
 
@@ -65,7 +65,8 @@ fn main() {
                 "/" => Get: RequestHandler::new(print_packet),
                 // Just an example.
                 "/:endpoint/:id" => Get: RequestHandler::new(print_packet),
-                "/:endpoint/:id" => Post: RequestHandler::new(print_packet)
+                "/:endpoint/:id" => Post: RequestHandler::new(print_packet),
+                "/:endpoint/:id" => Delete: RequestHandler::new(print_packet)
             } 
         },
             ..Server::default()
