@@ -1,4 +1,6 @@
 This
 is
-an example
+an example.
+
+And this is more text.
 
